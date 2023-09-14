@@ -1,0 +1,155 @@
+---
+title: "STATS 199"
+output:
+  pdf_document: default
+---
+
+```{r}
+library(scales)  ## for the alpha function below
+library(usmap)
+library(ggplot2)
+
+
+VT <- read.csv("ufo_sightings.csv")
+nuforc <- read.csv("ufo_data_nuforc.csv")
+#nuforc
+#VT
+
+#AZ;CA;CO;FL;GA;IL;MI;NC;NY;OH;OR;PA;TX
+
+plot.new()
+maps::map("state", interior=FALSE)
+maps::map("state", boundary=FALSE, col="gray", add=TRUE)
+          
+n_shapes <- table(nuforc$shape)
+#light; orb/sphere = marble 
+VT_shapes <- table(VT$Data.Shape)
+
+#n_shapes
+#VT_shapes
+13+6
+df <- data.frame(
+  state = c("AZ", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS",
+            "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", 
+            "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT",
+            "VA", "VT", "WA", "WI","WV", "WY"),
+  values = c(303,620,551,2287, 8428, 1355, 862,11, 166, 3758, 1215,250,651,502,2401,1255,595,835,542, 1213,824,521,1882,983,1364,361,444,1708,123,357,484,1230,667,747,2476,2213,696,1634,2304,224,990,170,1099,3333,600,1236,251,3567,1171,340,160)
+)
+
+plot_usmap(data = df, color = "black") + 
+  scale_fill_continuous(
+    low = "white", high = "black", name = "UFO Sightings" , label = scales::comma
+  ) + theme(legend.position = "right")
+
+#Top states -> AZ, CA, CO, IL, NC, FL, MI, MO, OR, PA, TX
+
+#Over 3,000 -> CA, FL, TX, WA
+
+table(nuforc$state) + table(VT$Location.State)
+
+#barplot((VT$Dates.Sighted.Hour)/100)
+#barplot(VT$Dates.Sighted.Hour, )
+
+cord <- data.frame(lon = VT$Location.Coordinates.Longitude., lat = VT$Location.Coordinates.Latitude.)
+
+
+#transformed_data <- usmap_transform(cord)
+
+#plot_usmap("states") + 
+#  geom_point(data = transformed_data, 
+#             aes(x = x, y = y), 
+#             color = "red",
+#             size = 3)
+
+cord$lon <- cord$lon + 3.5
+cord$lat <- cord$lat + 1.25
+plot_usmap(regions = "states")
+points(cord$lon,cord$lat, pch = 16,col = alpha("black", 0.15))
+
+
+
+```
+
+```{r}
+plot_usmap(regions = "states")
+points(cord$lon,cord$lat, col = "red")
+
+```
+
+```{r}
+#Cube data
+matches_nuforc <- grepl("Cube", nuforc$summary)
+matches_nuforc1 <- grepl("cube", nuforc$summary)
+matching_rows_n <- nuforc[matches_nuforc | matches_nuforc1, ]
+
+matching_rows_n
+#Diamond; 
+
+
+matches_VT <- grepl("Cube", VT$Data.Description.excerpt)
+matches_VT1 <- grepl("cube", VT$Data.Description.excerpt)
+matching_rows_VT <- VT[matches_VT1 | matches_VT, ]
+
+matching_rows_VT
+
+barplot(table(matching_rows_VT$Location.State))
+#table(matching_rows_VT$Location.State)
+#table(matching_rows_n$state)
+#
+#Only 31 observations of cube - less common - Reddit source also seems to be cube as well; Most cube sightings in WA - Parallel to Carl Higdon
+```
+
+```{r}
+#Light Data
+light_n <- grepl("Bright", nuforc$summary)
+light_n1 <- grepl("bright", nuforc$summary)
+match_light_n <- nuforc[light_n | matches_nuforc1, ]
+
+match_light_n
+
+#VT
+light_vt <- grepl("Pain", VT$Data.Description.excerpt)
+light_vt1 <- grepl("pain", VT$Data.Description.excerpt)
+match_light_VT <- VT[light_vt1 | light_vt, ]
+
+match_light_VT
+```
+
+```{r}
+#Marble Data
+marble_n <- grepl("Marble", nuforc$summary)
+marble_n1 <- grepl("marble", nuforc$summary)
+match_marble_n <- nuforc[marble_n | marble_n1, ]
+
+match_marble_n
+
+#VT
+marble_vt <- grepl("Marble", VT$Data.Description.excerpt)
+marble_vt1 <- grepl("marble", VT$Data.Description.excerpt)
+match_marble_vt <- VT[marble_vt | marble_vt1, ]
+
+match_marble_vt
+```
+
+```{r}
+#Blue Data
+blue_n <- grepl("Blue", nuforc$summary)
+blue_n1 <- grepl("blue", nuforc$summary)
+match_blue_n <- nuforc[blue_n | blue_n1, ]
+#match_blue_n
+
+
+#VT
+blue_vt <- grepl("Blue", VT$Data.Description.excerpt)
+blue_vt1 <- grepl("blue", VT$Data.Description.excerpt)
+match_blue_vt <- VT[blue_vt | blue_vt1, ]
+
+#match_blue_vt
+```
+
+```{r}
+barplot(n_shapes)
+#n_shapes
+#VT_shapes
+#Light comes up the most - 12,895/60632
+```

@@ -1,0 +1,131 @@
+---
+title: "Visuals"
+output: html_document
+date: "2023-03-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+
+```{r warning=F, message=F}
+library(tidyverse)
+library(lubridate)
+anime <- read.csv("anime_total.csv")
+baking <- read.csv("baking_total.csv")
+cat <- read.csv("cat_total.csv")
+cooking <- read.csv("cooking_total.csv")
+dog <- read.csv("dog_total.csv")
+drinks <- read.csv("drinks.csv")
+ufo <- read.csv("UFO_total.csv")
+cooking$type <- "cooking"
+cat$type <- "cat"
+dog$type <- "dog"
+ufo$type <- "ufo"
+data <- rbind(anime, baking)
+data <- rbind(data, cat)
+data <- rbind(data, cooking)
+data <- rbind(data, dog)
+data <- rbind(data, drinks)
+data <- rbind(data, ufo)
+data$datetime <- ymd_hms(data$unlist.x1_publish.)
+data$hour <- hour(data$datetime)
+data$month <- month(data$datetime)
+data$year <- year(data$datetime)
+data$date <- floor_date(date(data$datetime), "month")
+```
+
+```{r}
+
+data$duration <- sapply(data$duration, function(i){
+  t <- 0
+  if(grepl("S", i)) t <- t + as.numeric(gsub("^(.*)PT|^(.*)M|^(.*)H|S$", "", i))
+  if(grepl("M", i)) t <- t + as.numeric(gsub("^(.*)PT|^(.*)H|M(.*)$", "",i)) * 60
+  if(grepl("H", i)) t <- t + as.numeric(gsub("^(.*)PT|H(.*)$", "",i)) * 3600
+  t
+})
+
+```
+
+
+```{r}
+data %>% group_by(year, type) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(x=year, y=count, color=type)) + geom_line() +
+  labs(y="Number of videos", x="Year", title="Number of videos by year")
+```
+
+```{r}
+data %>% group_by(month, type) %>%
+  summarise(count=n()) %>%
+  mutate(month=factor(month)) %>%
+  ggplot(aes(x=month, y=count, color=type, group=type)) + geom_line() +
+  labs(y="Number of videos", x="Month", title="Number of videos by month")
+```
+
+```{r}
+data %>% group_by(hour, type) %>%
+  summarise(count=n()) %>%
+  mutate(hour=factor(hour)) %>%
+  ggplot(aes(x=hour, y=count, color=type, group=type)) + geom_line() +
+  labs(y="Number of videos", x="Hour", title="Number of videos by hour")
+```
+
+```{r}
+data %>% group_by(unlist.x1_channel.) %>% summarise(count=n()) %>%
+  arrange(desc(count)) %>% head(10) %>%
+  ggplot(aes(x=reorder(unlist.x1_channel., count), y=count)) + geom_col(fill="cornflowerblue") +
+  coord_flip() +
+  labs(x="Channel", y="Number of videos",
+       title="Top 10 channels by number of videos")
+```
+
+```{r fig.width=10, fig.height=10}
+data %>% group_by(unlist.x1_channel., type) %>% summarise(n=n()) %>%
+  group_by(type) %>%
+  top_n(10, n) %>%
+  ungroup() %>%
+  arrange(type, n) %>% 
+  mutate(order = row_number()) %>% {
+    ggplot(., aes(x = order, y = n, fill = type)) + 
+      geom_bar(stat = "identity", na.rm = TRUE, show.legend = FALSE) +
+      labs("Channel", y="Number of videos",
+           title="Top 10 channels by number of videos") +
+      facet_wrap(~type, scales = "free") +
+      coord_flip() +
+      scale_x_continuous(breaks = .$order, labels = .$unlist.x1_channel., expand = c(0, 0))
+  }
+```
+
+
+```{r}
+corr <- cor(data[, c("viewCount", "likeCount", "commentCount", 
+                     "channelviewcount", "subscriberCount", "videoCount" , "duration")])
+corr
+```
+
+```{r}
+library(corrplot)
+corrplot(corr)
+```
+
+```{r}
+options(scipen = 10)
+ggplot(data, aes(x=channelviewcount, y=subscriberCount, color=type)) + geom_point() 
+```
+
+```{r}
+ggplot(data, aes(x=type, y =duration, fill=type)) + geom_boxplot() +
+  scale_y_log10()
+```
+
+```{r}
+ggplot(data, aes(x=type, y =viewCount, fill=type)) + geom_boxplot() +
+  scale_y_log10()
+```
+
+```{r}
+ggplot(data, aes(x=subscriberCount, fill=type)) + geom_density(alpha=0.5)
+```
+
